@@ -42,8 +42,6 @@ namespace SourceGeneratorAssemblyToProcess
             Realms.Schema.Property.ObjectSet("SetNullableObject", "IgnoreObjectNullabilityClass", managedName: "SetNullableObject"),
             Realms.Schema.Property.ObjectDictionary("DictionaryNonNullableObject", "IgnoreObjectNullabilityClass", managedName: "DictionaryNonNullableObject"),
             Realms.Schema.Property.ObjectDictionary("DictionaryNullableObject", "IgnoreObjectNullabilityClass", managedName: "DictionaryNullableObject"),
-            Realms.Schema.Property.Backlinks("BacklinkNullableObject", "IgnoreObjectNullabilityClass", "NullableObject", managedName: "BacklinkNullableObject"),
-            Realms.Schema.Property.Backlinks("BacklinkNonNullableObject", "IgnoreObjectNullabilityClass", "NullableObject", managedName: "BacklinkNonNullableObject"),
         }.Build();
 
         #region IRealmObject implementation
@@ -303,10 +301,6 @@ namespace SourceGeneratorAssemblyToProcess
             System.Collections.Generic.IDictionary<string, SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass> DictionaryNonNullableObject { get; }
 
             System.Collections.Generic.IDictionary<string, SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass> DictionaryNullableObject { get; }
-
-            System.Linq.IQueryable<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass?> BacklinkNullableObject { get; }
-
-            System.Linq.IQueryable<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass> BacklinkNonNullableObject { get; }
         }
 
         [EditorBrowsable(EditorBrowsableState.Never), Realms.Preserve(AllMembers = true)]
@@ -407,34 +401,6 @@ namespace SourceGeneratorAssemblyToProcess
                     return _dictionaryNullableObject;
                 }
             }
-
-            private System.Linq.IQueryable<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass?> _backlinkNullableObject = null!;
-            public System.Linq.IQueryable<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass?> BacklinkNullableObject
-            {
-                get
-                {
-                    if (_backlinkNullableObject == null)
-                    {
-                        _backlinkNullableObject = GetBacklinks<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass?>("BacklinkNullableObject");
-                    }
-
-                    return _backlinkNullableObject;
-                }
-            }
-
-            private System.Linq.IQueryable<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass> _backlinkNonNullableObject = null!;
-            public System.Linq.IQueryable<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass> BacklinkNonNullableObject
-            {
-                get
-                {
-                    if (_backlinkNonNullableObject == null)
-                    {
-                        _backlinkNonNullableObject = GetBacklinks<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass>("BacklinkNonNullableObject");
-                    }
-
-                    return _backlinkNonNullableObject;
-                }
-            }
         }
 
         [EditorBrowsable(EditorBrowsableState.Never), Realms.Preserve(AllMembers = true)]
@@ -476,10 +442,6 @@ namespace SourceGeneratorAssemblyToProcess
 
             public System.Collections.Generic.IDictionary<string, SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass> DictionaryNullableObject { get; } = new Dictionary<string, SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass>();
 
-            public System.Linq.IQueryable<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass?> BacklinkNullableObject => throw new NotSupportedException("Using backlinks is only possible for managed(persisted) objects.");
-
-            public System.Linq.IQueryable<SourceGeneratorAssemblyToProcess.IgnoreObjectNullabilityClass> BacklinkNonNullableObject => throw new NotSupportedException("Using backlinks is only possible for managed(persisted) objects.");
-
             public IgnoreObjectNullabilityClassUnmanagedAccessor(Type objectType) : base(objectType)
             {
             }
@@ -490,8 +452,6 @@ namespace SourceGeneratorAssemblyToProcess
                 {
                     "NullableObject" => _nullableObject,
                     "NonNullableObject" => _nonNullableObject,
-                    "BacklinkNullableObject" => throw new NotSupportedException("Using backlinks is only possible for managed(persisted) objects."),
-                    "BacklinkNonNullableObject" => throw new NotSupportedException("Using backlinks is only possible for managed(persisted) objects."),
                     _ => throw new MissingMemberException($"The object does not have a gettable Realm property with name {propertyName}"),
                 };
             }

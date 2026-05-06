@@ -1,19 +1,8 @@
 ﻿[
   {
-    "Id": "RLM015",
+    "Id": "RLM019",
     "Severity": 3,
-    "Message": "IQueryableErrors.QueryableOfUnsupported is of type IQueryable, but the argument is not a realm object.",
-    "Location": {
-      "StartLine": 25,
-      "StartColumn": 9,
-      "EndLine": 26,
-      "EndColumn": 64
-    }
-  },
-  {
-    "Id": "RLM013",
-    "Severity": 3,
-    "Message": "IQueryableErrors.QueryableWithGetters has a setter but also has [Backlink] applied, which only supports getters.",
+    "Message": "IQueryableErrors.QueryableWithGetters has a setter but its type is a Backlink which only supports getters.",
     "Location": {
       "StartLine": 28,
       "StartColumn": 9,
