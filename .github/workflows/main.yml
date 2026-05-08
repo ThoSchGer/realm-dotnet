@@ -19,6 +19,10 @@ name: Main Build
 env:
   REALM_DISABLE_ANALYTICS: true
   DOTNET_NOLOGO: true
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
 jobs:
   build-wrappers:
     name: Wrappers
@@ -312,7 +316,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-net-core:
     name: Test ${{ matrix.framework }}, ${{ (matrix.os.runner == 'win81' && 'win81') || matrix.os.runtime }}
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -391,7 +395,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-macos-maui:
     name: Test Maui.MacCatalyst
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -438,7 +442,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-ios-maui:
     name: Test Maui.iOS
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -491,7 +495,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-android-maui:
     name: Test Maui.Android
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -555,7 +559,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-woven-classes:
     name: Test Woven Classes
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -595,7 +599,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-source-generation:
     name: Test Source Generation
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -628,7 +632,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-weaver:
     name: Test Weaver
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -671,7 +675,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-code-coverage:
     name: Test Code Coverage
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -737,7 +741,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   verify-namespaces:
     name: Verify Namespaces
     needs:

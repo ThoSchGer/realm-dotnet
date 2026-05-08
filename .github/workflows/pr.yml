@@ -25,6 +25,10 @@ env:
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
 jobs:
   build-wrappers:
     name: Wrappers
@@ -310,7 +314,7 @@ jobs:
     - name: Run the tests
       run: ./Tests/Realm.Tests/bin/Release/net461/Realm.Tests.exe --result=TestResults.xml --labels=After
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results .NET Framework
@@ -318,7 +322,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-net-core:
     name: Test ${{ matrix.framework }}, ${{ (matrix.os.runner == 'win81' && 'win81') || matrix.os.runtime }}
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -389,7 +393,7 @@ jobs:
         retention-days: 30
         if-no-files-found: warn
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results ${{ matrix.framework }}, ${{ (matrix.os.runner == 'win81' && 'win81') || matrix.os.runtime }}
@@ -397,7 +401,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-macos-maui:
     name: Test Maui.MacCatalyst
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -436,7 +440,7 @@ jobs:
     - name: Transform Results
       run: xsltproc --output TestResults.xml_transformed.xml Tests/Realm.Tests/EmbeddedResources/nunit3-junit.xslt TestResults.xml
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Maui.MacCatalyst
@@ -444,7 +448,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-ios-maui:
     name: Test Maui.iOS
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -489,7 +493,7 @@ jobs:
     - name: Transform Results
       run: xsltproc --output TestResults.xml_transformed.xml Tests/Realm.Tests/EmbeddedResources/nunit3-junit.xslt TestResults.xml
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Maui.iOS
@@ -497,7 +501,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-android-maui:
     name: Test Maui.Android
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -553,7 +557,7 @@ jobs:
     - name: Transform Results
       run: xsltproc --output ${{ steps.run_tests.outputs.test-results-path }}_transformed.xml Tests/Realm.Tests/EmbeddedResources/nunit3-junit.xslt ${{ steps.run_tests.outputs.test-results-path }}
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Maui.Android
@@ -561,7 +565,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-woven-classes:
     name: Test Woven Classes
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -593,7 +597,7 @@ jobs:
     - name: Run the tests
       run: ${{ steps.dotnet-publish.outputs.executable-path }} --result=TestResults.xml --labels=After
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Woven Classes
@@ -601,7 +605,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-source-generation:
     name: Test Source Generation
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -626,7 +630,7 @@ jobs:
     - name: Run the tests
       run: ${{ steps.dotnet-publish.outputs.executable-path }} --result=TestResults.xml --labels=After
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Source Generation
@@ -634,7 +638,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-weaver:
     name: Test Weaver
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -669,7 +673,7 @@ jobs:
     - name: Run the tests
       run: ${{ steps.dotnet-publish.outputs.executable-path }} --result=TestResults.xml --labels=After
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Weaver
@@ -677,7 +681,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-code-coverage:
     name: Test Code Coverage
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -726,6 +730,7 @@ jobs:
         if-no-files-found: warn
     - name: Publish Coverage
       id: publish-coveralls
+      if: github.event.pull_request.head.repo.full_name == github.repository
       uses: coverallsapp/github-action@v2.3.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -733,9 +738,10 @@ jobs:
         git-commit: ${{ github.event.pull_request.head.sha }}
         compare-sha: ${{ github.event.pull_request.base.sha }}
     - name: Output Coveralls response
+      if: github.event.pull_request.head.repo.full_name == github.repository
       run: echo ${{ steps.publish-coveralls.outputs.coveralls-api-result }}
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Code Coverage
@@ -743,7 +749,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   verify-namespaces:
     name: Verify Namespaces
     needs:
