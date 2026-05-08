@@ -658,8 +658,12 @@ jobs:
       run: |-
         echo "::add-matcher::.github/problem-matchers/csc.json"
         echo "::add-matcher::.github/problem-matchers/msvc.json"
-    - name: Publish Tests/Weaver/Realm.Fody.Tests
+    - name: Publish Tests/Weaver/Realm.Fody.Tests (framework-dependent)
+      if: matrix.os.runtime != 'osx-arm64'
       run: dotnet publish Tests/Weaver/Realm.Fody.Tests -c Release -f net10.0 -r ${{ matrix.os.runtime }}  --no-self-contained
+    - name: Publish Tests/Weaver/Realm.Fody.Tests (self-contained on osx-arm64)
+      if: matrix.os.runtime == 'osx-arm64'
+      run: dotnet publish Tests/Weaver/Realm.Fody.Tests -c Release -f net10.0 -r ${{ matrix.os.runtime }} --self-contained
     - name: Output executable path
       id: dotnet-publish
       shell: bash
