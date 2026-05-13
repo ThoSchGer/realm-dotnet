@@ -156,11 +156,11 @@ jobs:
       if: ${{ runner.os == 'Windows' }}
       uses: microsoft/setup-msbuild@70b70342ae97ca98d5eaad06cafd26d30f9592a9
     - name: Build Realm/Realm
-      run: msbuild Realm/Realm -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
+      run: dotnet msbuild Realm/Realm -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
     - name: Build Realm/Realm.UnityUtils
-      run: msbuild Realm/Realm.UnityUtils -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
+      run: dotnet msbuild Realm/Realm.UnityUtils -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
     - name: Build Realm/Realm.UnityWeaver
-      run: msbuild Realm/Realm.UnityWeaver -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
+      run: dotnet msbuild Realm/Realm.UnityWeaver -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
     - name: Read version
       id: get-version
       shell: bash
