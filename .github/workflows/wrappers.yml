@@ -496,12 +496,19 @@ jobs:
       with:
         path: ./wrappers/build/**
         key: wrappers-android-${{ matrix.arch }}-Release-${{hashFiles('./wrappers/**')}}
+    - name: Setup NDK r27c
+      if: steps.check-cache.outputs.cache-hit != 'true'
+      id: setup-ndk
+      uses: nttld/setup-ndk@v1
+      with:
+        # NDK 29 (Clang 21) breaks std::is_pod specializations in realm-core/s2.
+        # Pin to NDK r27c (Clang 17).
+        ndk-version: r27c
+        add-to-path: false
     - name: Build Wrappers
       if: steps.check-cache.outputs.cache-hit != 'true'
       env:
-        # NDK 29 (Clang 21) breaks std::is_pod specializations in realm-core/s2.
-        # Pin to NDK r27c (Clang 17) which is pre-installed on ubuntu-latest.
-        ANDROID_NDK_LATEST_HOME: /usr/local/lib/android/sdk/ndk/27.2.12479018
+        ANDROID_NDK_LATEST_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
       run: './wrappers/build-android.sh --ARCH=${{ matrix.arch }} --configuration=Release '
     - name: Store artifacts for wrappers-android-${{ matrix.arch }}
       uses: actions/upload-artifact@v4
