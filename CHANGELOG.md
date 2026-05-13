@@ -1,7 +1,12 @@
 ## vNext (TBD)
 
+### Breaking Changes
+* .NET 8 is no longer a supported target framework. The minimum supported .NET version is now .NET 10. (PR [#XXXX](https://github.com/realm/realm-dotnet/pull/XXXX))
+* .NET Standard 2.0 is retained only for packaging compatibility; new feature work targets `net10.0`.
+
 ### Enhancements
-* None
+* MAUI on Android, iOS, macOS/MacCatalyst, and Windows is now the primary platform target. All CI validation runs against `net10.0-*` MAUI targets. (PR [#XXXX](https://github.com/realm/realm-dotnet/pull/XXXX))
+* Updated `CommunityToolkit.Mvvm` to 8.4.0 in the QuickJournal example. (PR [#XXXX](https://github.com/realm/realm-dotnet/pull/XXXX))
 
 ### Fixed
 * None
@@ -10,6 +15,9 @@
 * Realm Studio: 15.0.0 or later.
 
 ### Internal
+* Migrated all projects from `net8.0` to `net10.0` (Realm.Tests, Realm.Fody.Tests, SourceGenerator.Tests, Tests.XUnit, SetupUnityPackage, PerformanceTests).
+* Removed UWP-specific storage folder detection (`TryGetUWPFolder`) from `InteropConfig`.
+* CI workflows updated to use `dotnet-version: 10.0.x` and `net10.0-*` framework flags.
 * Using Core x.y.z.
 
 ## 20.1.0 (2025-01-07)

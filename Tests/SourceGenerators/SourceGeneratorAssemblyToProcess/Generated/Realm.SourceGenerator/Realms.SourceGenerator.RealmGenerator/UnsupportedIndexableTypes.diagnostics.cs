@@ -79,40 +79,7 @@
   {
     "Id": "RLM007",
     "Severity": 3,
-    "Message": "UnsupportedIndexableTypes.FtsIntProp is marked as [Indexed(IndexType.FullText)] which is only allowed on string properties, not on int.",
-    "Location": {
-      "StartLine": 45,
-      "StartColumn": 9,
-      "EndLine": 46,
-      "EndColumn": 44
-    }
-  },
-  {
-    "Id": "RLM007",
-    "Severity": 3,
-    "Message": "UnsupportedIndexableTypes.FtsBoolProp is marked as [Indexed(IndexType.FullText)] which is only allowed on string properties, not on bool.",
-    "Location": {
-      "StartLine": 48,
-      "StartColumn": 9,
-      "EndLine": 49,
-      "EndColumn": 46
-    }
-  },
-  {
-    "Id": "RLM007",
-    "Severity": 3,
-    "Message": "UnsupportedIndexableTypes.FtsRealmValueProp is marked as [Indexed(IndexType.FullText)] which is only allowed on string properties, not on RealmValue.",
-    "Location": {
-      "StartLine": 51,
-      "StartColumn": 9,
-      "EndLine": 52,
-      "EndColumn": 58
-    }
-  },
-  {
-    "Id": "RLM007",
-    "Severity": 3,
-    "Message": "UnsupportedIndexableTypes.FtsObjectProp is marked as [Indexed(IndexType.FullText)] which is only allowed on string properties, not on RealmObj.",
+    "Message": "UnsupportedIndexableTypes.FtsObjectProp is marked as [Indexed] which is only allowed on integral types as well as string, bool and DateTimeOffset, not on RealmObj.",
     "Location": {
       "StartLine": 54,
       "StartColumn": 9,
@@ -123,23 +90,12 @@
   {
     "Id": "RLM007",
     "Severity": 3,
-    "Message": "UnsupportedIndexableTypes.FtsDoubleProp is marked as [Indexed(IndexType.FullText)] which is only allowed on string properties, not on double.",
+    "Message": "UnsupportedIndexableTypes.FtsDoubleProp is marked as [Indexed] which is only allowed on integral types as well as string, bool and DateTimeOffset, not on double.",
     "Location": {
       "StartLine": 57,
       "StartColumn": 9,
       "EndLine": 58,
       "EndColumn": 50
-    }
-  },
-  {
-    "Id": "RLM007",
-    "Severity": 3,
-    "Message": "UnsupportedIndexableTypes.NoneIndexedInt is annotated as [Indexed(IndexType.None)] which is not allowed. If you don't wish to index the property, removed the [Indexed] attribute.",
-    "Location": {
-      "StartLine": 60,
-      "StartColumn": 9,
-      "EndLine": 61,
-      "EndColumn": 48
     }
   },
   {

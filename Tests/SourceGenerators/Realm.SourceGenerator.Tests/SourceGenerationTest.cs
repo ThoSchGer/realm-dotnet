@@ -40,6 +40,12 @@ namespace SourceGeneratorTests
             "EmbeddedObj",
         };
 
+        // Error classes that also emit generated output (without special options).
+        // Add class names here when the generator starts producing output for them in error mode.
+        private static readonly string[] _errorClassesWithGeneratedOutput = {
+            "UnsupportedBacklink",
+        };
+
         [OneTimeSetUp]
         public void Setup()
         {
@@ -115,6 +121,15 @@ namespace SourceGeneratorTests
                 var diagnostics = GetDiagnosticsForClass(className);
 
                 test.TestState.ExpectedDiagnostics.AddRange(diagnostics.Select(Convert));
+
+                // Some error classes also emit generated output (without special options).
+                // Opt-in: add the class name here when the generator starts producing output for it.
+                if (_errorClassesWithGeneratedOutput.Contains(className))
+                {
+                    var generated = GetGeneratedForClass(className);
+                    var generatedFileName = GetGeneratedFileNameForClass(className);
+                    test.TestState.GeneratedSources.Add((typeof(RealmGenerator), generatedFileName, generated));
+                }
             }
 
             AddSupportClasses(test);

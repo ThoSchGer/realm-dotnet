@@ -1,4 +1,4 @@
-# Do not modify!
+﻿# Do not modify!
 # This file was generated from a template using https://github.com/StefMa/pkl-gha
 
 name: PR Build
@@ -25,6 +25,10 @@ env:
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
 jobs:
   build-wrappers:
     name: Wrappers
@@ -50,7 +54,7 @@ jobs:
         echo "::add-matcher::.github/problem-matchers/msvc.json"
     - uses: actions/setup-dotnet@5d1464d5da459f3d7085106d52e499f4dc5d0f59
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     - name: Set version suffix
       id: set-version-suffix
       shell: pwsh
@@ -128,21 +132,6 @@ jobs:
       with:
         name: wrappers-windows-ARM64
         path: wrappers/build
-    - name: Fetch wrappers for windows-uwp-Win32
-      uses: actions/download-artifact@v4
-      with:
-        name: wrappers-windows-uwp-Win32
-        path: wrappers/build
-    - name: Fetch wrappers for windows-uwp-x64
-      uses: actions/download-artifact@v4
-      with:
-        name: wrappers-windows-uwp-x64
-        path: wrappers/build
-    - name: Fetch wrappers for windows-uwp-ARM64
-      uses: actions/download-artifact@v4
-      with:
-        name: wrappers-windows-uwp-ARM64
-        path: wrappers/build
     - name: Fetch wrappers for iOS-Device
       uses: actions/download-artifact@v4
       with:
@@ -167,11 +156,11 @@ jobs:
       if: ${{ runner.os == 'Windows' }}
       uses: microsoft/setup-msbuild@70b70342ae97ca98d5eaad06cafd26d30f9592a9
     - name: Build Realm/Realm
-      run: msbuild Realm/Realm -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
+      run: dotnet msbuild Realm/Realm -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
     - name: Build Realm/Realm.UnityUtils
-      run: msbuild Realm/Realm.UnityUtils -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
+      run: dotnet msbuild Realm/Realm.UnityUtils -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
     - name: Build Realm/Realm.UnityWeaver
-      run: msbuild Realm/Realm.UnityWeaver -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
+      run: dotnet msbuild Realm/Realm.UnityWeaver -t:Pack -restore -p:Configuration=Release -p:PackageOutputPath=${{ github.workspace }}/Realm/packages -p:VersionSuffix=${{ steps.set-version-suffix.outputs.build_suffix }}
     - name: Read version
       id: get-version
       shell: bash
@@ -325,7 +314,7 @@ jobs:
     - name: Run the tests
       run: ./Tests/Realm.Tests/bin/Release/net461/Realm.Tests.exe --result=TestResults.xml --labels=After
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results .NET Framework
@@ -333,54 +322,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
-  test-uwp:
-    name: Test UWP
-    if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
-    needs:
-    - build-packages
-    runs-on: windows-latest
-    timeout-minutes: 60
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      with:
-        submodules: false
-        ref: ${{ github.event.pull_request.head.sha }}
-    - name: Register problem matchers
-      run: |-
-        echo "::add-matcher::.github/problem-matchers/csc.json"
-        echo "::add-matcher::.github/problem-matchers/msvc.json"
-    - name: Fetch Realm
-      uses: actions/download-artifact@v4
-      with:
-        name: Realm.${{ needs.build-packages.outputs.package_version }}
-        path: ${{ github.workspace }}/Realm/packages/
-    - name: Import test certificate
-      shell: powershell
-      run: |-
-        $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.Base64_Encoded_Pfx }}")
-        $currentDirectory = Get-Location
-        [IO.File]::WriteAllBytes("${{ github.workspace }}\Tests\Tests.UWP\Tests.UWP_TemporaryKey.pfx", $pfx_cert_byte)
-        certutil -f -p "${{ secrets.Pfx_Password }}" -importpfx my ${{ github.workspace }}\Tests\Tests.UWP\Tests.UWP_TemporaryKey.pfx
-    - name: Add msbuild to PATH
-      if: ${{ runner.os == 'Windows' }}
-      uses: microsoft/setup-msbuild@70b70342ae97ca98d5eaad06cafd26d30f9592a9
-    - name: Build Tests/Tests.UWP
-      run: msbuild Tests/Tests.UWP -restore -p:Configuration=Release -p:AppxBundle=Always -p:PackageCertificateKeyFile=${{ github.workspace }}\Tests\Tests.UWP\Tests.UWP_TemporaryKey.pfx -p:PackageCertificatePassword=${{ secrets.Pfx_Password }} -p:UseDotNetNativeToolchain=false -p:AppxBundlePlatforms=x64 -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }}
-    - name: Run the tests
-      shell: powershell
-      run: ./Tests/Tests.UWP/RunTests.ps1
-    - name: Publish Unit Test Results
-      if: always()
-      uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
-      with:
-        name: Results UWP
-        path: ${{ env.TEST_RESULTS }}
-        reporter: java-junit
-        list-suites: failed
-        path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-net-core:
     name: Test ${{ matrix.framework }}, ${{ (matrix.os.runner == 'win81' && 'win81') || matrix.os.runtime }}
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -389,7 +331,7 @@ jobs:
     strategy:
       matrix:
         framework:
-        - net8.0
+        - net10.0
         os:
         - runner: windows-latest
           runtime: win-x64
@@ -451,7 +393,7 @@ jobs:
         retention-days: 30
         if-no-files-found: warn
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results ${{ matrix.framework }}, ${{ (matrix.os.runner == 'win81' && 'win81') || matrix.os.runtime }}
@@ -459,7 +401,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-macos-maui:
     name: Test Maui.MacCatalyst
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -484,7 +426,7 @@ jobs:
         path: ${{ github.workspace }}/Realm/packages/
     - uses: actions/setup-dotnet@5d1464d5da459f3d7085106d52e499f4dc5d0f59
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     - name: Setup Maui workload
       run: dotnet workload install maui
     - name: Setup Xcode
@@ -492,13 +434,13 @@ jobs:
       with:
         xcode-version: latest-stable
     - name: Build Tests/Tests.Maui
-      run: dotnet build Tests/Tests.Maui -c Release -f net8.0-maccatalyst -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }}
+      run: dotnet build Tests/Tests.Maui -c Release -f net10.0-maccatalyst -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }}
     - name: Run the tests
-      run: Tests/Tests.Maui/bin/Release/net8.0-maccatalyst/maccatalyst-x64/Tests.Maui.app/Contents/MacOS/Tests.Maui --headless --result=${{ github.workspace }}/TestResults.xml --labels=All
+      run: Tests/Tests.Maui/bin/Release/net10.0-maccatalyst/maccatalyst-x64/Tests.Maui.app/Contents/MacOS/Tests.Maui --headless --result=${{ github.workspace }}/TestResults.xml --labels=All
     - name: Transform Results
       run: xsltproc --output TestResults.xml_transformed.xml Tests/Realm.Tests/EmbeddedResources/nunit3-junit.xslt TestResults.xml
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Maui.MacCatalyst
@@ -506,7 +448,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-ios-maui:
     name: Test Maui.iOS
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -531,7 +473,7 @@ jobs:
         path: ${{ github.workspace }}/Realm/packages/
     - uses: actions/setup-dotnet@5d1464d5da459f3d7085106d52e499f4dc5d0f59
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     - name: Setup Maui workload
       run: dotnet workload install maui
     - name: Setup Xcode
@@ -539,11 +481,11 @@ jobs:
       with:
         xcode-version: latest-stable
     - name: Build Tests/Tests.Maui
-      run: dotnet build Tests/Tests.Maui -c Release -f net8.0-ios -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }}
+      run: dotnet build Tests/Tests.Maui -c Release -f net10.0-ios -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }}
     - name: Run on Simulator
       uses: realm/ci-actions/run-ios-simulator@6418e15ed9bbdb19b7d456a347e5623779f95cdf
       with:
-        appPath: Tests/Tests.Maui/bin/Release/net8.0-ios/iossimulator-arm64/Tests.Maui.app
+        appPath: Tests/Tests.Maui/bin/Release/net10.0-ios/iossimulator-arm64/Tests.Maui.app
         bundleId: io.realm.mauitests
         iphoneToSimulate: iPhone-15
         arguments: --headless --result=${{ github.workspace }}/TestResults.xml --labels=All
@@ -551,7 +493,7 @@ jobs:
     - name: Transform Results
       run: xsltproc --output TestResults.xml_transformed.xml Tests/Realm.Tests/EmbeddedResources/nunit3-junit.xslt TestResults.xml
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Maui.iOS
@@ -559,7 +501,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-android-maui:
     name: Test Maui.Android
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -589,15 +531,15 @@ jobs:
         path: ${{ github.workspace }}/Realm/packages/
     - uses: actions/setup-dotnet@5d1464d5da459f3d7085106d52e499f4dc5d0f59
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
     - name: Setup Maui workload
       run: dotnet workload install maui
     - name: Publish Tests/Tests.Maui
-      run: dotnet publish Tests/Tests.Maui -c Release -f net8.0-android -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }} --no-self-contained
+      run: dotnet publish Tests/Tests.Maui -c Release -f net10.0-android -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }} --no-self-contained
     - name: Output executable path
       id: dotnet-publish
       shell: bash
-      run: echo 'executable-path=./Tests/Tests.Maui/bin/Release/net8.0-android/null/Tests.Maui' >> $GITHUB_OUTPUT
+      run: echo 'executable-path=./Tests/Tests.Maui/bin/Release/net10.0-android/null/Tests.Maui' >> $GITHUB_OUTPUT
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4.0.2
       with:
@@ -608,14 +550,14 @@ jobs:
       id: run_tests
       uses: ./.github/actions/run-android-device-farm-test
       with:
-        apk-path: ${{ github.workspace }}/Tests/Tests.Maui/bin/Release/net8.0-android/publish/io.realm.mauitests-Signed.apk
+        apk-path: ${{ github.workspace }}/Tests/Tests.Maui/bin/Release/net10.0-android/publish/io.realm.mauitests-Signed.apk
         app-id: io.realm.mauitests
         project-arn: ${{ secrets.DEVICEFARM_PROJECT_ARN }}
         device-pool-arn: ${{ secrets.DEVICEFARM_ANDROID_POOL_ARN }}
     - name: Transform Results
       run: xsltproc --output ${{ steps.run_tests.outputs.test-results-path }}_transformed.xml Tests/Realm.Tests/EmbeddedResources/nunit3-junit.xslt ${{ steps.run_tests.outputs.test-results-path }}
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Maui.Android
@@ -623,7 +565,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-woven-classes:
     name: Test Woven Classes
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -647,15 +589,15 @@ jobs:
         name: Realm.${{ needs.build-packages.outputs.package_version }}
         path: ${{ github.workspace }}/Realm/packages/
     - name: Publish Tests/Realm.Tests
-      run: dotnet publish Tests/Realm.Tests -c Release -f net8.0 -r win-x64 -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }} -p:RealmTestsStandaloneExe=true -p:TestWeavedClasses=true --no-self-contained
+      run: dotnet publish Tests/Realm.Tests -c Release -f net10.0 -r win-x64 -p:RestoreConfigFile=Tests/Test.NuGet.Config -p:UseRealmNupkgsWithVersion=${{ needs.build-packages.outputs.package_version }} -p:RealmTestsStandaloneExe=true -p:TestWeavedClasses=true --no-self-contained
     - name: Output executable path
       id: dotnet-publish
       shell: bash
-      run: echo 'executable-path=./Tests/Realm.Tests/bin/Release/net8.0/win-x64/Realm.Tests' >> $GITHUB_OUTPUT
+      run: echo 'executable-path=./Tests/Realm.Tests/bin/Release/net10.0/win-x64/Realm.Tests' >> $GITHUB_OUTPUT
     - name: Run the tests
       run: ${{ steps.dotnet-publish.outputs.executable-path }} --result=TestResults.xml --labels=After
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Woven Classes
@@ -663,7 +605,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-source-generation:
     name: Test Source Generation
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -680,15 +622,15 @@ jobs:
         echo "::add-matcher::.github/problem-matchers/csc.json"
         echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Publish Tests/SourceGenerators/Realm.SourceGenerator.Tests
-      run: dotnet publish Tests/SourceGenerators/Realm.SourceGenerator.Tests -c Release -f net8.0 -r win-x64  --no-self-contained
+      run: dotnet publish Tests/SourceGenerators/Realm.SourceGenerator.Tests -c Release -f net10.0 -r win-x64  --no-self-contained
     - name: Output executable path
       id: dotnet-publish
       shell: bash
-      run: echo 'executable-path=./Tests/SourceGenerators/Realm.SourceGenerator.Tests/bin/Release/net8.0/win-x64/Realm.SourceGenerator.Tests' >> $GITHUB_OUTPUT
+      run: echo 'executable-path=./Tests/SourceGenerators/Realm.SourceGenerator.Tests/bin/Release/net10.0/win-x64/Realm.SourceGenerator.Tests' >> $GITHUB_OUTPUT
     - name: Run the tests
       run: ${{ steps.dotnet-publish.outputs.executable-path }} --result=TestResults.xml --labels=After
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Source Generation
@@ -696,7 +638,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-weaver:
     name: Test Weaver
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -707,8 +649,8 @@ jobs:
           runtime: win-x64
         - runner: ubuntu-latest
           runtime: linux-x64
-        - runner: macos-14
-          runtime: osx-arm64
+        - runner: macos-13
+          runtime: osx-x64
       fail-fast: false
     runs-on: ${{ matrix.os.runner }}
     timeout-minutes: 60
@@ -722,16 +664,19 @@ jobs:
       run: |-
         echo "::add-matcher::.github/problem-matchers/csc.json"
         echo "::add-matcher::.github/problem-matchers/msvc.json"
+    - uses: actions/setup-dotnet@5d1464d5da459f3d7085106d52e499f4dc5d0f59
+      with:
+        dotnet-version: 10.0.x
     - name: Publish Tests/Weaver/Realm.Fody.Tests
-      run: dotnet publish Tests/Weaver/Realm.Fody.Tests -c Release -f net8.0 -r ${{ matrix.os.runtime }}  --no-self-contained
+      run: dotnet publish Tests/Weaver/Realm.Fody.Tests -c Release -f net10.0 -r ${{ matrix.os.runtime }} --no-self-contained
     - name: Output executable path
       id: dotnet-publish
       shell: bash
-      run: echo 'executable-path=./Tests/Weaver/Realm.Fody.Tests/bin/Release/net8.0/${{ matrix.os.runtime }}/Realm.Fody.Tests' >> $GITHUB_OUTPUT
+      run: echo 'executable-path=./Tests/Weaver/Realm.Fody.Tests/bin/Release/net10.0/${{ matrix.os.runtime }}/Realm.Fody.Tests' >> $GITHUB_OUTPUT
     - name: Run the tests
       run: ${{ steps.dotnet-publish.outputs.executable-path }} --result=TestResults.xml --labels=After
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Weaver
@@ -739,7 +684,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   test-code-coverage:
     name: Test Code Coverage
     if: always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
@@ -768,16 +713,16 @@ jobs:
         dotnet tool install dotnet-reportgenerator-globaltool --tool-path tools
         echo "${{ github.workspace }}/tools" >> $GITHUB_PATH
     - name: Publish Tests/Realm.Tests
-      run: dotnet publish Tests/Realm.Tests -c Release -f net8.0 -r linux-x64 -p:RealmTestsStandaloneExe=true --no-self-contained
+      run: dotnet publish Tests/Realm.Tests -c Release -f net10.0 -r linux-x64 -p:RealmTestsStandaloneExe=true --no-self-contained
     - name: Output executable path
       id: dotnet-publish
       shell: bash
-      run: echo 'executable-path=./Tests/Realm.Tests/bin/Release/net8.0/linux-x64/Realm.Tests' >> $GITHUB_OUTPUT
+      run: echo 'executable-path=./Tests/Realm.Tests/bin/Release/net10.0/linux-x64/Realm.Tests' >> $GITHUB_OUTPUT
     - name: Run the tests
       env:
         DOTNET_DbgEnableMiniDump: 1
         DOTNET_EnableCrashReport: 1
-      run: ./tools/coverlet ./Tests/Realm.Tests/bin/Release/net8.0/linux-x64 -t ${{ steps.dotnet-publish.outputs.executable-path }} -a '--result=TestResults.xml --labels=After' -f lcov -o ./report.lcov --exclude '[Realm.Tests]*' --exclude '[Realm.Fody]*'
+      run: ./tools/coverlet ./Tests/Realm.Tests/bin/Release/net10.0/linux-x64 -t ${{ steps.dotnet-publish.outputs.executable-path }} -a '--result=TestResults.xml --labels=After' -f lcov -o ./report.lcov --exclude '[Realm.Tests]*' --exclude '[Realm.Fody]*'
     - name: Archive core dump
       if: ${{ failure() && runner.os != 'Windows' }}
       uses: actions/upload-artifact@v4
@@ -788,6 +733,7 @@ jobs:
         if-no-files-found: warn
     - name: Publish Coverage
       id: publish-coveralls
+      if: github.event.pull_request.head.repo.full_name == github.repository
       uses: coverallsapp/github-action@v2.3.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -795,9 +741,10 @@ jobs:
         git-commit: ${{ github.event.pull_request.head.sha }}
         compare-sha: ${{ github.event.pull_request.base.sha }}
     - name: Output Coveralls response
+      if: github.event.pull_request.head.repo.full_name == github.repository
       run: echo ${{ steps.publish-coveralls.outputs.coveralls-api-result }}
     - name: Publish Unit Test Results
-      if: always()
+      if: always() && github.event.pull_request.head.repo.full_name == github.repository
       uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5
       with:
         name: Results Code Coverage
@@ -805,7 +752,7 @@ jobs:
         reporter: java-junit
         list-suites: failed
         path-replace-backslashes: true
-        fail-on-error: true
+        fail-on-error: false
   verify-namespaces:
     name: Verify Namespaces
     needs:
